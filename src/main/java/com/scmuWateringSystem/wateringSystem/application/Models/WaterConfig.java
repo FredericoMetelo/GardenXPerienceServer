@@ -1,38 +1,29 @@
 package com.scmuWateringSystem.wateringSystem.application.Models;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Data
+@Entity
+@Table(name = "waterConfigs")
 public class WaterConfig {
 
     private float humidityThreshold;
     private float temperatureThreshold;
     private int timeToFunction;
-
-    public WaterConfig(float humidityThreshold, float temperatureThreshold, int timeToFunction) {
+    @Id
+    private String id;
+    public WaterConfig (float humidityThreshold, float temperatureThreshold, int timeToFunction){
         this.humidityThreshold = humidityThreshold;
         this.temperatureThreshold = temperatureThreshold;
         this.timeToFunction = timeToFunction;
     }
 
-    public float getHumidityThreshold() {
-        return humidityThreshold;
-    }
+    public WaterConfig() {
 
-    public void setHumidityThreshold(float humidityThreshold) {
-        this.humidityThreshold = humidityThreshold;
-    }
-
-    public float getTemperatureThreshold() {
-        return temperatureThreshold;
-    }
-
-    public void setTemperatureThreshold(float temperatureThreshold) {
-        this.temperatureThreshold = temperatureThreshold;
-    }
-
-    public int getTimeToFunction() {
-        return timeToFunction;
-    }
-
-    public void setTimeToFunction(int timeToFunction) {
-        this.timeToFunction = timeToFunction;
     }
 }

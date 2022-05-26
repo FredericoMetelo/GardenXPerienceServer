@@ -1,6 +1,8 @@
 package com.scmuWateringSystem.wateringSystem.application.controllers;
 
 import com.scmuWateringSystem.wateringSystem.application.Models.Metric;
+import com.scmuWateringSystem.wateringSystem.application.Models.WaterConfig;
+import com.scmuWateringSystem.wateringSystem.application.Repository.ConfigsJpaRepository;
 import com.scmuWateringSystem.wateringSystem.application.Repository.ConfigsRepository;
 import com.scmuWateringSystem.wateringSystem.application.Repository.MetricsRepository;
 import com.scmuWateringSystem.wateringSystem.application.arguments.ConfigsBody;
@@ -10,6 +12,7 @@ import com.scmuWateringSystem.wateringSystem.application.arguments.WaterGardenPa
 //import com.scmuWateringSystem.wateringSystem.mqtt.MqttGateway;
 import lombok.AllArgsConstructor;
 //import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestClientResponseException;
@@ -25,6 +28,16 @@ public class Controller {
     //private final MqttGateway mqtGateway;
     private MetricsRepository metricsRepository;
     private ConfigsRepository configsRepository;
+
+    @Autowired
+    private ConfigsJpaRepository waterConfigsRepo;
+
+    @PostMapping("/testPostW")
+    public String testPostWaterConfigs(@RequestBody WaterConfig waterConfig){
+        waterConfig.setId("ID1 " +System.currentTimeMillis());
+        WaterConfig w = waterConfigsRepo.save(waterConfig);
+        return w.getId();
+    }
 
     public Controller() {
         this.metricsRepository = new MetricsRepository();

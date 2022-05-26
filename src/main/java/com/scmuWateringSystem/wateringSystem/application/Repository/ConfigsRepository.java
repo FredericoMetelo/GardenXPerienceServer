@@ -3,10 +3,13 @@ package com.scmuWateringSystem.wateringSystem.application.Repository;
 import com.scmuWateringSystem.wateringSystem.application.Models.LightConfig;
 import com.scmuWateringSystem.wateringSystem.application.Models.WaterConfig;
 import com.scmuWateringSystem.wateringSystem.application.arguments.ConfigsBody;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
+
+@Service
 public class ConfigsRepository {
     WaterConfig waterConfig;
     LightConfig lightConfig;
