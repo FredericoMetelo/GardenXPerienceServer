@@ -1,21 +1,23 @@
 package com.scmuWateringSystem.wateringSystem.application.Models;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Data
+@Entity
+@AllArgsConstructor
+@Table(name = "metric")
 public class Metric {
     private String date;
     private String value;
 
-    public Metric(String date, String value) {
-        this.date = date;
-        this.value = value;
-    }
+    @Id
+    private String id;
 
-    public String getDate() {
-        return date;
-    }
-
-
-    public String getValue() {
-        return value;
-    }
+    public Metric(){}
 
 }

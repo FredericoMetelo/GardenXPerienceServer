@@ -2,20 +2,16 @@ package com.scmuWateringSystem.wateringSystem.application.controllers;
 
 import com.scmuWateringSystem.wateringSystem.application.Models.Metric;
 import com.scmuWateringSystem.wateringSystem.application.Models.WaterConfig;
-import com.scmuWateringSystem.wateringSystem.application.Repository.ConfigsJpaRepository;
-import com.scmuWateringSystem.wateringSystem.application.Repository.ConfigsRepository;
-import com.scmuWateringSystem.wateringSystem.application.Repository.MetricsRepository;
+import com.scmuWateringSystem.wateringSystem.application.services.ConfigsService;
+import com.scmuWateringSystem.wateringSystem.application.Repository.WaterConfigsJpaRepository;
+import com.scmuWateringSystem.wateringSystem.application.services.MetricsService;
 import com.scmuWateringSystem.wateringSystem.application.arguments.ConfigsBody;
-import com.scmuWateringSystem.wateringSystem.application.arguments.StopWatering;
-import com.scmuWateringSystem.wateringSystem.application.arguments.UpdateDeviceParametersArgs;
-import com.scmuWateringSystem.wateringSystem.application.arguments.WaterGardenParameters;
 //import com.scmuWateringSystem.wateringSystem.mqtt.MqttGateway;
 import lombok.AllArgsConstructor;
 //import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -26,11 +22,11 @@ import java.util.List;
 @RestController
 public class Controller {
     //private final MqttGateway mqtGateway;
-    private MetricsRepository metricsRepository;
-    private ConfigsRepository configsRepository;
+    private MetricsService metricsService;
+    private final ConfigsService configsService;
 
     @Autowired
-    private ConfigsJpaRepository waterConfigsRepo;
+    private final WaterConfigsJpaRepository waterConfigsRepo;
 
     @PostMapping("/testPostW")
     public String testPostWaterConfigs(@RequestBody WaterConfig waterConfig){
@@ -38,12 +34,6 @@ public class Controller {
         WaterConfig w = waterConfigsRepo.save(waterConfig);
         return w.getId();
     }
-
-    public Controller() {
-        this.metricsRepository = new MetricsRepository();
-        this.configsRepository = new ConfigsRepository();
-    }
-
 
     @GetMapping
     public String test(){
@@ -53,19 +43,19 @@ public class Controller {
     // GET http://localhost:8080/api/waterTempData/0
     @GetMapping("/waterTempData/{id}")
     public List<Metric> waterTempData(@PathVariable String id){
-        return metricsRepository.getRelevantTemperature();
+        return metricsService.getRelevantTemperature();
     }
 
     // GET http://localhost:8080/api/waterHumData/0
     @GetMapping("/waterHumData/{id}")
     public List<Metric> waterHumData(@PathVariable String id){
-        return metricsRepository.getRelevantHumidity();
+        return metricsService.getRelevantHumidity();
     }
 
     // GET http://localhost:8080/api/lightData/0
     @GetMapping("/lightData/{id}")
     public List<Metric> lightData(@PathVariable String id){
-        return metricsRepository.getRelevantLight();
+        return metricsService.getRelevantLight();
     }
 
 
@@ -82,15 +72,9 @@ public class Controller {
     @GetMapping("/getConfig/{id}/{automatism}")
     public ConfigsBody getConfig(@PathVariable String id, @PathVariable String automatism){
         // Device ID is to be ignored.
-        ConfigsBody cb;
-        switch (automatism) {
-            case "rega" -> cb = configsRepository.getWaterConfigBody();
-            case "light" -> cb = configsRepository.getLightConfigBody();
-            default -> {
-                HttpStatus a = HttpStatus.NOT_FOUND;
-                throw new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "entity not found");
-            }
+        ConfigsBody cb = configsService.getConfigsBody(automatism);
+        if(cb==null){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "automatism not found");
         }
         return cb;
     }
@@ -105,11 +89,11 @@ public class Controller {
                 case "rega" -> {
                     String ht = cb.getThresholds().get(0);
                     String tt = cb.getThresholds().get(1);
-                    configsRepository.UpdateWaterConfig(Float.parseFloat(ht), Float.parseFloat(tt), Integer.parseInt(cb.getTimeToFucntion()));
+                    configsService.UpdateWaterConfig(Float.parseFloat(ht), Float.parseFloat(tt), Integer.parseInt(cb.getTimeToFucntion()));
                 }
                 case "luz" -> {
                     String ht = cb.getThresholds().get(0);
-                    configsRepository.UpdateLightConfig(Float.parseFloat(ht),  Integer.parseInt(cb.getTimeToFucntion()));
+                    configsService.UpdateLightConfig(Float.parseFloat(ht),  Integer.parseInt(cb.getTimeToFucntion()));
                 }
             }
         }catch(Exception e){

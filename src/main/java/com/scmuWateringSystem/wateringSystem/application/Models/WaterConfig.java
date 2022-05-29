@@ -10,6 +10,7 @@ import javax.persistence.Table;
 @Data
 @Entity
 @Table(name = "waterConfigs")
+@AllArgsConstructor
 public class WaterConfig {
 
     private float humidityThreshold;
@@ -17,13 +18,5 @@ public class WaterConfig {
     private int timeToFunction;
     @Id
     private String id;
-    public WaterConfig (float humidityThreshold, float temperatureThreshold, int timeToFunction){
-        this.humidityThreshold = humidityThreshold;
-        this.temperatureThreshold = temperatureThreshold;
-        this.timeToFunction = timeToFunction;
-    }
-
-    public WaterConfig() {
-
-    }
+    public WaterConfig() {}
 }
