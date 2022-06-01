@@ -42,7 +42,6 @@ public class MetricsService {
         }
     }
 
-    // TODO Go to the fucking Database to fetch this shit. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     public List<Metric> getRelevantLight(){
         //List<Metric> toStore = lightData.subList(Math.max(0, lightData.size() - 20), lightData.size());
         //return metricsJPARepository.saveAll(toStore);
@@ -50,7 +49,6 @@ public class MetricsService {
         return page.toList();
     }
 
-    // TODO Go to the fucking Database to fetch this shit. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     public List<Metric> getRelevantHumidity(){
         Page<Metric> page = metricsJPARepository.findAll(pagination());
         return page.toList();
@@ -59,7 +57,6 @@ public class MetricsService {
 
     }
 
-    // TODO Go to the fucking Database to fetch this shit. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     public List<Metric> getRelevantTemperature(){
         //List<Metric> toStore = temperatureData.subList(Math.max(0, temperatureData.size() - 20), temperatureData.size());
         //return metricsJPARepository.saveAll(toStore);

@@ -9,6 +9,8 @@ import com.scmuWateringSystem.wateringSystem.application.arguments.ConfigsBody;
 //import com.scmuWateringSystem.wateringSystem.mqtt.MqttGateway;
 import lombok.AllArgsConstructor;
 //import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +26,8 @@ public class Controller {
     //private final MqttGateway mqtGateway;
     private MetricsService metricsService;
     private final ConfigsService configsService;
+
+    private final Logger logger = LoggerFactory.getLogger(Controller.class);
 
     @Autowired
     private final WaterConfigsJpaRepository waterConfigsRepo;
@@ -64,7 +68,7 @@ public class Controller {
     public String getActuatorStatus(@PathVariable String id){
         // Device ID is to be ignored.
         // TODO Perguntar Sink Node estado e reencaminhar?
-        return "TODO";
+        return "Loles, TODO";
     }
 
     // GET http://localhost:8080/api/getConfig/0/rega
@@ -74,7 +78,7 @@ public class Controller {
         // Device ID is to be ignored.
         ConfigsBody cb = configsService.getConfigsBody(automatism);
         if(cb==null){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "automatism not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "body not found");
         }
         return cb;
     }
@@ -82,25 +86,29 @@ public class Controller {
     // POST http://localhost:8080/api/config/0/rega
     // POST http://localhost:8080/api/config/0/luz
     @PostMapping("/config/{id}/{automatism}")
-    public String configWater(@PathVariable String id, @PathVariable String automatism, @RequestBody ConfigsBody cb){
-
+    public ConfigsBody config(@PathVariable String id, @PathVariable String automatism, @RequestBody ConfigsBody cb){
         try{
             switch (cb.getAutomatismo()){
                 case "rega" -> {
                     String ht = cb.getThresholds().get(0);
                     String tt = cb.getThresholds().get(1);
-                    configsService.UpdateWaterConfig(Float.parseFloat(ht), Float.parseFloat(tt), Integer.parseInt(cb.getTimeToFucntion()));
+                    String timeTofun =  (cb.getTimeToFucntion().isEmpty()) ?  "45" : cb.getTimeToFucntion();
+                    configsService.UpdateWaterConfig(Float.parseFloat(ht), Float.parseFloat(tt), Integer.parseInt(timeTofun));
+                    logger.warn("config of: "+ ht + " " + tt);
+                    return configsService.getConfigsBody("rega");
                 }
                 case "luz" -> {
                     String ht = cb.getThresholds().get(0);
                     configsService.UpdateLightConfig(Float.parseFloat(ht),  Integer.parseInt(cb.getTimeToFucntion()));
+
+                    return configsService.getConfigsBody("luz");
                 }
             }
         }catch(Exception e){
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR, "This was not supposed to happen");
         }
-        return "OK";
+        return cb;
     }
 
 

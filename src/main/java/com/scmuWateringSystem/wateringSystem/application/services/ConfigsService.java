@@ -28,7 +28,7 @@ public class ConfigsService {
         return UUID.randomUUID().toString();
     }
     public void UpdateWaterConfig(float humidityThreshold, float temperatureThreshold, int timeToFunction){
-        WaterConfig waterConfig = new WaterConfig(humidityThreshold,temperatureThreshold,timeToFunction,"WATERCONFIG");
+        WaterConfig waterConfig = new WaterConfig(humidityThreshold,temperatureThreshold,timeToFunction, WATER_CONFIG_ID);
         waterConfigsJpaRepository.save(waterConfig);
     }
 
