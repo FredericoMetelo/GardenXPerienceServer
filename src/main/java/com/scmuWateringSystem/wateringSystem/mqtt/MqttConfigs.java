@@ -1,6 +1,9 @@
-/**
+
 package com.scmuWateringSystem.wateringSystem.mqtt;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.annotation.ServiceActivator;
@@ -19,6 +22,13 @@ import org.springframework.messaging.MessagingException;
 
 @Configuration
 public class MqttConfigs {
+
+    public static final String AUTO_WATERING_NOTIFICATION_TOPIC = "NOTIFICATION/AUTO_WATERING";
+    public static final String MANUAL_WATERING_NOTIFICATION_TOPIC = "NOTIFICATION/MANUAL_WATERING";
+
+    @Value( "${mqtt.url}" )
+    private String url;
+
         @Bean
         public MqttPahoClientFactory mqttClientFactory() {
             DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
@@ -28,10 +38,10 @@ public class MqttConfigs {
             options.setKeepAliveInterval(60);
             options.setAutomaticReconnect(true);
 
-            String url = "tcp://localhost:1883";
+            //String url = "tcp://localhost:1883";
             options.setServerURIs(new String[] { url});
             //options.setUserName("admin");
-            String pass = "12345678";
+            //String pass = "12345678";
             //options.setPassword(pass.toCharArray());
             options.setCleanSession(true);
 
@@ -46,8 +56,9 @@ public class MqttConfigs {
 
         @Bean
         public MessageProducer inbound() {
+            String allTopics = "#";
             MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter("serverIn",
-                    mqttClientFactory(), "#");
+                    mqttClientFactory(), MANUAL_WATERING_NOTIFICATION_TOPIC,AUTO_WATERING_NOTIFICATION_TOPIC);
 
             adapter.setCompletionTimeout(5000);
             adapter.setConverter(new DefaultPahoMessageConverter());
@@ -65,7 +76,7 @@ public class MqttConfigs {
                 @Override
                 public void handleMessage(Message<?> message) throws MessagingException {
                     String topic = message.getHeaders().get(MqttHeaders.RECEIVED_TOPIC).toString();
-                    if(topic.equals("myTopic")) {
+                    if(topic.equals(MANUAL_WATERING_NOTIFICATION_TOPIC)) {
                         System.out.println("This is the topic");
                     }
                     System.out.println(message.getPayload());
@@ -90,4 +101,3 @@ public class MqttConfigs {
             return messageHandler;
         }
 }
-**/

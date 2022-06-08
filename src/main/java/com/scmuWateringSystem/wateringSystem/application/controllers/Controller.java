@@ -7,6 +7,8 @@ import com.scmuWateringSystem.wateringSystem.application.Repository.WaterConfigs
 import com.scmuWateringSystem.wateringSystem.application.services.MetricsService;
 import com.scmuWateringSystem.wateringSystem.application.arguments.ConfigsBody;
 //import com.scmuWateringSystem.wateringSystem.mqtt.MqttGateway;
+import com.scmuWateringSystem.wateringSystem.mqtt.MqttConfigs;
+import com.scmuWateringSystem.wateringSystem.mqtt.MqttGateway;
 import lombok.AllArgsConstructor;
 //import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
@@ -23,7 +25,7 @@ import java.util.List;
 //@Slf4j
 @RestController
 public class Controller {
-    //private final MqttGateway mqtGateway;
+    private final MqttGateway mqtGateway;
     private MetricsService metricsService;
     private final ConfigsService configsService;
 
@@ -36,6 +38,7 @@ public class Controller {
     public String testPostWaterConfigs(@RequestBody WaterConfig waterConfig){
         waterConfig.setId("ID1 " +System.currentTimeMillis());
         WaterConfig w = waterConfigsRepo.save(waterConfig);
+        mqtGateway.sendToMqtt("HELLO FROM HEAVEN", MqttConfigs.MANUAL_WATERING_NOTIFICATION_TOPIC);
         return w.getId();
     }
 
@@ -127,47 +130,3 @@ public class Controller {
     }
 
 }
-
-// Legacy API:
-/*@GetMapping()
-    public String test(){
-        return "OLA";
-    }
-
-    @GetMapping("/viewSoilMoisture")
-    public String viewSoilMoisture(){
-        //mqtGateway.sendToMqtt("what is the soil moisture","sensors/temperature");
-        return "soilMoisture";
-    }
-
-    @PostMapping("/waterTheGarden")
-    public String waterTheGarden(@RequestBody WaterGardenParameters parameters){
-        //mqtGateway.sendToMqtt("Water the garden at 2:10","#");
-
-        return "soilMoisture";
-    }
-
-    @GetMapping("/history")
-    public String viewHistory(){
-        return "history";
-    }
-
-    @PostMapping("/stopWatering")
-    public String stopWatering(@RequestBody StopWatering stopWatering){
-        return "stop";
-    }
-
-    @GetMapping("/{deviceId}")
-    public String viewDeviceStatus(@PathVariable("deviceId") String devideId){
-        return devideId;
-    }
-
-    @PostMapping("/changeParameters")
-    public String updateDeviceParameters(@RequestBody UpdateDeviceParametersArgs updateDeviceParametersArgs){
-        return "parametersChanged";
-    }
-
-    @PostMapping("/{status}")
-    public String changeLightState(@PathVariable String status){
-        return "STATUS CHANGED";
-    }*/
