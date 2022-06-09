@@ -2,6 +2,7 @@
 package com.scmuWateringSystem.wateringSystem.mqtt;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -23,11 +24,16 @@ import org.springframework.messaging.MessagingException;
 @Configuration
 public class MqttConfigs {
 
-    public static final String AUTO_WATERING_NOTIFICATION_TOPIC = "NOTIFICATION/AUTO_WATERING";
-    public static final String MANUAL_WATERING_NOTIFICATION_TOPIC = "NOTIFICATION/MANUAL_WATERING";
+    //public static final String AUTO_WATERING_NOTIFICATION_TOPIC = "NOTIFICATION/AUTO_WATERING";
+    //ublic static final String MANUAL_WATERING_NOTIFICATION_TOPIC = "NOTIFICATION/MANUAL_WATERING";
 
     @Value( "${mqtt.url}" )
     private String url;
+
+    @Autowired
+    private Topics topics;
+    @Autowired
+    private ReceivedMessagesServiceHandler receivedMessagesServiceHandler;
 
         @Bean
         public MqttPahoClientFactory mqttClientFactory() {
@@ -46,7 +52,6 @@ public class MqttConfigs {
             options.setCleanSession(true);
 
             factory.setConnectionOptions(options);
-
             return factory;
         }
         @Bean
@@ -56,9 +61,16 @@ public class MqttConfigs {
 
         @Bean
         public MessageProducer inbound() {
+            /**
+             * Subscribe:
+             * humidity/data -> MetricsService lightData
+             * temperature/data -> MetricsService.TemperatureData
+             * luminosity/data -> MetricsService.luminosityData
+             * watering/event -
+             */
             String allTopics = "#";
             MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter("serverIn",
-                    mqttClientFactory(), MANUAL_WATERING_NOTIFICATION_TOPIC,AUTO_WATERING_NOTIFICATION_TOPIC);
+                    mqttClientFactory(), topics.getHumidityData(),topics.getTemperatureData(),topics.getLuminosityData(),topics.getWateringEvent());
 
             adapter.setCompletionTimeout(5000);
             adapter.setConverter(new DefaultPahoMessageConverter());
@@ -68,20 +80,18 @@ public class MqttConfigs {
         }
 
 
+
         @Bean
         @ServiceActivator(inputChannel = "mqttInputChannel")
         public MessageHandler handler() {
             return new MessageHandler() {
-
                 @Override
                 public void handleMessage(Message<?> message) throws MessagingException {
                     String topic = message.getHeaders().get(MqttHeaders.RECEIVED_TOPIC).toString();
-                    if(topic.equals(MANUAL_WATERING_NOTIFICATION_TOPIC)) {
-                        System.out.println("This is the topic");
-                    }
-                    System.out.println(message.getPayload());
+                    String strMessage = message.getPayload().toString();
+                    receivedMessagesServiceHandler.handleAllTopics(topic,strMessage);
+                    System.out.println("READ FROM TOPIC - "+topic);
                 }
-
             };
         }
 

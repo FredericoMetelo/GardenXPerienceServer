@@ -9,7 +9,7 @@ import javax.persistence.Table;
 
 @Data
 @Entity
-@Table(name = "lightConfig")
+@Table(name = "lightConfigs")
 @AllArgsConstructor
 public class LightConfig {
     private float luminosityThreshold;

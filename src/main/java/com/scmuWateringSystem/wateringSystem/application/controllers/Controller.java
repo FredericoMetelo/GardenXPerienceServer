@@ -9,6 +9,7 @@ import com.scmuWateringSystem.wateringSystem.application.arguments.ConfigsBody;
 //import com.scmuWateringSystem.wateringSystem.mqtt.MqttGateway;
 import com.scmuWateringSystem.wateringSystem.mqtt.MqttConfigs;
 import com.scmuWateringSystem.wateringSystem.mqtt.MqttGateway;
+import com.scmuWateringSystem.wateringSystem.mqtt.Topics;
 import lombok.AllArgsConstructor;
 //import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
@@ -28,17 +29,16 @@ public class Controller {
     private final MqttGateway mqtGateway;
     private MetricsService metricsService;
     private final ConfigsService configsService;
+    private final Topics topics;
 
     private final Logger logger = LoggerFactory.getLogger(Controller.class);
-
-    @Autowired
     private final WaterConfigsJpaRepository waterConfigsRepo;
 
     @PostMapping("/testPostW")
     public String testPostWaterConfigs(@RequestBody WaterConfig waterConfig){
         waterConfig.setId("ID1 " +System.currentTimeMillis());
         WaterConfig w = waterConfigsRepo.save(waterConfig);
-        mqtGateway.sendToMqtt("HELLO FROM HEAVEN", MqttConfigs.MANUAL_WATERING_NOTIFICATION_TOPIC);
+        //mqtGateway.sendToMqtt("HELLO FROM HEAVEN", MqttConfigs.MANUAL_WATERING_NOTIFICATION_TOPIC);
         return w.getId();
     }
 
@@ -93,17 +93,19 @@ public class Controller {
         try{
             switch (cb.getAutomatismo()){
                 case "rega" -> {
-                    String ht = cb.getThresholds().get(0);
-                    String tt = cb.getThresholds().get(1);
+                    String humidityThreshold = cb.getThresholds().get(0);
+                    String temperatureThreshold = cb.getThresholds().get(1);
+                    mqtGateway.sendToMqtt(humidityThreshold,topics.getHumidityMin());
+                    mqtGateway.sendToMqtt(temperatureThreshold,topics.getTemperatureMin());
                     String timeTofun =  (cb.getTimeToFucntion().isEmpty()) ?  "45" : cb.getTimeToFucntion();
-                    configsService.UpdateWaterConfig(Float.parseFloat(ht), Float.parseFloat(tt), Integer.parseInt(timeTofun));
-                    logger.warn("config of: "+ ht + " " + tt);
+                    configsService.UpdateWaterConfig(Float.parseFloat(humidityThreshold), Float.parseFloat(temperatureThreshold), Integer.parseInt(timeTofun));
+                    logger.info("config of: "+ humidityThreshold + " " + temperatureThreshold);
                     return configsService.getConfigsBody("rega");
                 }
                 case "luz" -> {
-                    String ht = cb.getThresholds().get(0);
-                    configsService.UpdateLightConfig(Float.parseFloat(ht),  Integer.parseInt(cb.getTimeToFucntion()));
-
+                    String lightThreshold = cb.getThresholds().get(0);
+                    mqtGateway.sendToMqtt(lightThreshold,topics.getLuminosityData());
+                    configsService.UpdateLightConfig(Float.parseFloat(lightThreshold),  Integer.parseInt(cb.getTimeToFucntion()));
                     return configsService.getConfigsBody("luz");
                 }
             }
