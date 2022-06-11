@@ -8,19 +8,6 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "mqtt.topics")
 @Data
 public class Topics {
-    /**
-     *
-     mqtt.topics.humidityData=humidity/data
-     mqtt.topics.humidityMin=humidity/min
-
-     mqtt.topics.temperatureData=temperature/data
-     mqtt.topics.temperatureMin=temperature/min
-
-
-     mqtt.topics.water=water/set
-     mqtt.topics.luminosityData=luminosity/data
-     mqtt.topics.light=light/set
-     */
     private String humidityData;
     private String humidityMin;
 

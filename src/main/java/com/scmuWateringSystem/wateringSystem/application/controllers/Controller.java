@@ -1,20 +1,15 @@
 package com.scmuWateringSystem.wateringSystem.application.controllers;
 
 import com.scmuWateringSystem.wateringSystem.application.Models.Metric;
-import com.scmuWateringSystem.wateringSystem.application.Models.WaterConfig;
+import com.scmuWateringSystem.wateringSystem.application.Repository.ParameterNames;
 import com.scmuWateringSystem.wateringSystem.application.services.ConfigsService;
-import com.scmuWateringSystem.wateringSystem.application.Repository.WaterConfigsJpaRepository;
 import com.scmuWateringSystem.wateringSystem.application.services.MetricsService;
 import com.scmuWateringSystem.wateringSystem.application.arguments.ConfigsBody;
-//import com.scmuWateringSystem.wateringSystem.mqtt.MqttGateway;
-import com.scmuWateringSystem.wateringSystem.mqtt.MqttConfigs;
 import com.scmuWateringSystem.wateringSystem.mqtt.MqttGateway;
 import com.scmuWateringSystem.wateringSystem.mqtt.Topics;
 import lombok.AllArgsConstructor;
-//import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -32,15 +27,6 @@ public class Controller {
     private final Topics topics;
 
     private final Logger logger = LoggerFactory.getLogger(Controller.class);
-    private final WaterConfigsJpaRepository waterConfigsRepo;
-
-    @PostMapping("/testPostW")
-    public String testPostWaterConfigs(@RequestBody WaterConfig waterConfig){
-        waterConfig.setId("ID1 " +System.currentTimeMillis());
-        WaterConfig w = waterConfigsRepo.save(waterConfig);
-        //mqtGateway.sendToMqtt("HELLO FROM HEAVEN", MqttConfigs.MANUAL_WATERING_NOTIFICATION_TOPIC);
-        return w.getId();
-    }
 
     @GetMapping
     public String test(){
@@ -89,46 +75,33 @@ public class Controller {
     // POST http://localhost:8080/api/config/0/rega
     // POST http://localhost:8080/api/config/0/luz
     @PostMapping("/config/{id}/{automatism}")
-    public ConfigsBody config(@PathVariable String id, @PathVariable String automatism, @RequestBody ConfigsBody cb){
+    public void config(@PathVariable String id, @PathVariable String automatism, @RequestBody ConfigsBody cb){
         try{
             switch (cb.getAutomatismo()){
                 case "rega" -> {
                     String humidityThreshold = cb.getThresholds().get(0);
                     String temperatureThreshold = cb.getThresholds().get(1);
+                    int duration =  Integer.parseInt((cb.getTimeToFucntion().isEmpty()) ?  "45" : cb.getTimeToFucntion());
+
                     mqtGateway.sendToMqtt(humidityThreshold,topics.getHumidityMin());
                     mqtGateway.sendToMqtt(temperatureThreshold,topics.getTemperatureMin());
-                    String timeTofun =  (cb.getTimeToFucntion().isEmpty()) ?  "45" : cb.getTimeToFucntion();
-                    configsService.UpdateWaterConfig(Float.parseFloat(humidityThreshold), Float.parseFloat(temperatureThreshold), Integer.parseInt(timeTofun));
+                    configsService.updateParameter(ParameterNames.WateringHumidityTrigger.name(),Integer.parseInt(humidityThreshold));
+                    configsService.updateParameter(ParameterNames.WateringTemperatureTrigger.name(),Integer.parseInt(temperatureThreshold));
+                    configsService.updateParameter(ParameterNames.WateringDuration.name(),duration);
                     logger.info("config of: "+ humidityThreshold + " " + temperatureThreshold);
-                    return configsService.getConfigsBody("rega");
                 }
                 case "luz" -> {
-                    String lightThreshold = cb.getThresholds().get(0);
-                    mqtGateway.sendToMqtt(lightThreshold,topics.getLuminosityData());
-                    configsService.UpdateLightConfig(Float.parseFloat(lightThreshold),  Integer.parseInt(cb.getTimeToFucntion()));
-                    return configsService.getConfigsBody("luz");
+                    int lightThreshold = Integer.parseInt(cb.getThresholds().get(0));
+                    int lightDuration =  Integer.parseInt(cb.getTimeToFucntion());
+
+                    mqtGateway.sendToMqtt(String.format("%|%"),topics.getLuminosityData());
+                    configsService.updateParameter(ParameterNames.LightLuminosityTrigger.name(),lightThreshold);
+                    configsService.updateParameter(ParameterNames.WateringDuration.name(),lightDuration);
                 }
             }
         }catch(Exception e){
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR, "This was not supposed to happen");
         }
-        return cb;
     }
-
-
-    // POST http://localhost:8080/api/start/0/rega
-    // POST http://localhost:8080/api/start/0/luz
-    @PostMapping("/start/{id}/{automatism}")
-    public String startActuator(@PathVariable String id, @PathVariable String automatism){
-        return "start";
-    }
-
-    // POST http://localhost:8080/api/stop/0/rega
-    // POST http://localhost:8080/api/stop/0/luz
-    @PostMapping("/stop/{id}/{automatism}")
-    public String stopActuator(@PathVariable String id, @PathVariable String automatism){
-        return "stop";
-    }
-
 }

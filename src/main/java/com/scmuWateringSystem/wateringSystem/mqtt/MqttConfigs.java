@@ -32,6 +32,7 @@ public class MqttConfigs {
 
     @Autowired
     private Topics topics;
+
     @Autowired
     private ReceivedMessagesServiceHandler receivedMessagesServiceHandler;
 
