@@ -16,6 +16,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
+import static com.scmuWateringSystem.wateringSystem.application.services.ConfigsService.LIGHT_AUTOMATISM;
+import static com.scmuWateringSystem.wateringSystem.application.services.ConfigsService.WATERING_AUTOMATISM;
+
 @RequestMapping("/api")
 @AllArgsConstructor
 //@Slf4j
@@ -57,7 +60,7 @@ public class Controller {
     public String getActuatorStatus(@PathVariable String id){
         // Device ID is to be ignored.
         // TODO Perguntar Sink Node estado e reencaminhar?
-        return "Loles, TODO";
+        return "TODO";
     }
 
     // GET http://localhost:8080/api/getConfig/0/rega
@@ -75,33 +78,15 @@ public class Controller {
     // POST http://localhost:8080/api/config/0/rega
     // POST http://localhost:8080/api/config/0/luz
     @PostMapping("/config/{id}/{automatism}")
-    public void config(@PathVariable String id, @PathVariable String automatism, @RequestBody ConfigsBody cb){
-        try{
-            switch (cb.getAutomatismo()){
-                case "rega" -> {
-                    String humidityThreshold = cb.getThresholds().get(0);
-                    String temperatureThreshold = cb.getThresholds().get(1);
-                    int duration =  Integer.parseInt((cb.getTimeToFucntion().isEmpty()) ?  "45" : cb.getTimeToFucntion());
-
-                    mqtGateway.sendToMqtt(humidityThreshold,topics.getHumidityMin());
-                    mqtGateway.sendToMqtt(temperatureThreshold,topics.getTemperatureMin());
-                    configsService.updateParameter(ParameterNames.WateringHumidityTrigger.name(),Integer.parseInt(humidityThreshold));
-                    configsService.updateParameter(ParameterNames.WateringTemperatureTrigger.name(),Integer.parseInt(temperatureThreshold));
-                    configsService.updateParameter(ParameterNames.WateringDuration.name(),duration);
-                    logger.info("config of: "+ humidityThreshold + " " + temperatureThreshold);
-                }
-                case "luz" -> {
-                    int lightThreshold = Integer.parseInt(cb.getThresholds().get(0));
-                    int lightDuration =  Integer.parseInt(cb.getTimeToFucntion());
-
-                    mqtGateway.sendToMqtt(String.format("%|%"),topics.getLuminosityData());
-                    configsService.updateParameter(ParameterNames.LightLuminosityTrigger.name(),lightThreshold);
-                    configsService.updateParameter(ParameterNames.WateringDuration.name(),lightDuration);
-                }
+    public void config(@PathVariable String id, @PathVariable String automatism ,@RequestBody ConfigsBody cb){
+        switch (cb.getAutomatismo()){
+            case WATERING_AUTOMATISM -> {
+                configsService.publishWateringConfigs(cb);
             }
-        }catch(Exception e){
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "This was not supposed to happen");
+            case LIGHT_AUTOMATISM -> {
+                configsService.publishLightConfigs(cb);
+            }
+            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Unexpected value: " + cb.getAutomatismo());
         }
     }
 }

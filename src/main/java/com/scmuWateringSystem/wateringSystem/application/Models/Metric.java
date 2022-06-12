@@ -14,7 +14,7 @@ import javax.persistence.Table;
 public class Metric {
     private String date;
     private String value;
-
+    private String magnitudeType;
     @Id
     private String id;
 

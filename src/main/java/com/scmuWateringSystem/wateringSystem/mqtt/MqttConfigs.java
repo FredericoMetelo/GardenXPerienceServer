@@ -1,5 +1,7 @@
 
 package com.scmuWateringSystem.wateringSystem.mqtt;
+import org.eclipse.paho.client.mqttv3.IMqttClient;
+import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +32,11 @@ public class MqttConfigs {
     @Value( "${mqtt.url}" )
     private String url;
 
+    @Value( "${mqtt.receiverClientId}" )
+    private String clientReceiverId;
+
+    @Value( "${mqtt.senderClientId}" )
+    private String clientSenderId;
     @Autowired
     private Topics topics;
 
@@ -51,9 +58,15 @@ public class MqttConfigs {
             //String pass = "12345678";
             //options.setPassword(pass.toCharArray());
             options.setCleanSession(true);
-
             factory.setConnectionOptions(options);
             return factory;
+        }
+        public void readFromLuminosityData() throws MqttException {
+            MqttPahoClientFactory pahoClientFactory = mqttClientFactory();
+            IMqttClient iMqttClient = pahoClientFactory.getClientInstance(url,clientSenderId);
+            iMqttClient.subscribeWithResponse(topics.getLuminosityData(), (tpic, msg) -> {
+                System.out.println(msg.getId() + " -> " + new String(msg.getPayload()));
+            });
         }
         @Bean
         public MessageChannel mqttInputChannel() {
@@ -61,7 +74,7 @@ public class MqttConfigs {
         }
 
         @Bean
-        public MessageProducer inbound() {
+        public MessageProducer inbound() throws Exception{
             /**
              * Subscribe:
              * humidity/data -> MetricsService lightData
@@ -70,8 +83,12 @@ public class MqttConfigs {
              * watering/event -
              */
             String allTopics = "#";
-            MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter("serverIn",
-                    mqttClientFactory(), topics.getHumidityData(),topics.getTemperatureData(),topics.getLuminosityData(),topics.getWateringEvent());
+            MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(clientReceiverId,
+                    mqttClientFactory(),
+                    topics.getHumidityData(),
+                    topics.getTemperatureData(),
+                    topics.getLuminosityData(),
+                    topics.getWateringEvent());
 
             adapter.setCompletionTimeout(5000);
             adapter.setConverter(new DefaultPahoMessageConverter());
@@ -84,14 +101,13 @@ public class MqttConfigs {
 
         @Bean
         @ServiceActivator(inputChannel = "mqttInputChannel")
-        public MessageHandler handler() {
+        public MessageHandler handler() throws MqttException {
             return new MessageHandler() {
                 @Override
                 public void handleMessage(Message<?> message) throws MessagingException {
                     String topic = message.getHeaders().get(MqttHeaders.RECEIVED_TOPIC).toString();
                     String strMessage = message.getPayload().toString();
                     receivedMessagesServiceHandler.handleAllTopics(topic,strMessage);
-                    System.out.println("READ FROM TOPIC - "+topic);
                 }
             };
         }
@@ -103,12 +119,13 @@ public class MqttConfigs {
         }
         @Bean
         @ServiceActivator(inputChannel = "mqttOutboundChannel")
-        public MessageHandler mqttOutbound() {
+        public MessageHandler mqttOutbound() throws MqttException {
             //clientId is generated using a random number
-            MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler("serverOut", mqttClientFactory());
+            MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(clientSenderId, mqttClientFactory());
             messageHandler.setAsync(true);
             messageHandler.setDefaultTopic("testTopic");
             messageHandler.setDefaultRetained(false);
+
             return messageHandler;
         }
 }
