@@ -68,8 +68,8 @@ public class ConfigsService {
     }
 
     public void publishWateringConfigs(ConfigsBody cb){
-        String humidityThreshold = cb.getThresholds().get(0);
-        String temperatureThreshold = cb.getThresholds().get(1);
+        String humidityThreshold = cb.getThresholds().get(1);
+        String temperatureThreshold = cb.getThresholds().get(0);
         int duration =  Integer.parseInt((cb.getTimeToFucntion().isEmpty()) ?  "45" : cb.getTimeToFucntion());
         mqtGateway.sendToMqtt(humidityThreshold,topics.getHumidityMin());
         mqtGateway.sendToMqtt(temperatureThreshold,topics.getTemperatureMin());
